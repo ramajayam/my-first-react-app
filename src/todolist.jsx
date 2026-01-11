@@ -1,74 +1,113 @@
 import React, { useState, useEffect } from 'react';
 
 function TodoList() {
-  // State to store our tasks (now objects with text and completed status)
   const [tasks, setTasks] = useState([]);
   const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(true); // NEW: loading state
 
-  // Load tasks from localStorage when component mounts
+  // Load tasks from backend when component mounts
   useEffect(() => {
-    const savedTasks = localStorage.getItem('myTodoTasks');
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-      console.log('✅ Loaded tasks from database:', JSON.parse(savedTasks));
-    }
+    fetchTasks();
   }, []);
 
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    if (tasks.length > 0) {
-      localStorage.setItem('myTodoTasks', JSON.stringify(tasks));
-      console.log('💾 Saved tasks to database:', tasks);
-    }
-  }, [tasks]);
-
-  // Function to add a new task
-  const addTask = () => {
-    if (inputValue.trim() !== '') {
-      // Create new task object with text and completed status
-      const newTask = {
-        text: inputValue,
-        completed: false
-      };
-      setTasks([...tasks, newTask]);
-      setInputValue(''); // Clear input after adding
+  // NEW: Function to fetch tasks from backend
+  const fetchTasks = async () => {
+    try {
+      const response = await fetch('/api/tasks');
+      const data = await response.json();
+      setTasks(data);
+      console.log('✅ Loaded tasks from cloud database:', data);
+      setLoading(false);
+    } catch (error) {
+      console.error('❌ Error loading tasks:', error);
+      setLoading(false);
     }
   };
 
-  // 🔥 NEW: Function to toggle task completion
-  const toggleComplete = (indexToToggle) => {
-    setTasks(tasks.map((task, index) => {
-      if (index === indexToToggle) {
-        return { ...task, completed: !task.completed };
+  // Function to add a new task
+  const addTask = async () => {
+    if (inputValue.trim() !== '') {
+      try {
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ text: inputValue }),
+        });
+        const newTask = await response.json();
+        setTasks([...tasks, newTask]);
+        setInputValue('');
+        console.log('✅ Added task to cloud database:', newTask);
+      } catch (error) {
+        console.error('❌ Error adding task:', error);
       }
-      return task;
-    }));
+    }
+  };
+
+  // Function to toggle task completion
+  const toggleComplete = async (taskId, currentStatus) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completed: !currentStatus }),
+      });
+      const updatedTask = await response.json();
+      
+      setTasks(tasks.map(task => 
+        task._id === taskId ? updatedTask : task
+      ));
+      console.log('✅ Updated task in cloud database:', updatedTask);
+    } catch (error) {
+      console.error('❌ Error updating task:', error);
+    }
   };
 
   // Function to delete a task
-  const deleteTask = (indexToDelete) => {
-    setTasks(tasks.filter((task, index) => index !== indexToDelete));
+  const deleteTask = async (taskId) => {
+    try {
+      await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      });
+      setTasks(tasks.filter(task => task._id !== taskId));
+      console.log('✅ Deleted task from cloud database');
+    } catch (error) {
+      console.error('❌ Error deleting task:', error);
+    }
   };
 
   // Function to clear all tasks
-  const clearAllTasks = () => {
-    setTasks([]);
-    localStorage.removeItem('myTodoTasks');
-    console.log('🗑️ Cleared all tasks from database');
+  const clearAllTasks = async () => {
+    try {
+      await fetch('/api/tasks', {
+        method: 'DELETE',
+      });
+      setTasks([]);
+      console.log('🗑️ Cleared all tasks from cloud database');
+    } catch (error) {
+      console.error('❌ Error clearing tasks:', error);
+    }
   };
 
-  // 🔥 NEW: Calculate statistics
+  // Calculate statistics
   const completedCount = tasks.filter(task => task.completed).length;
   const totalCount = tasks.length;
+
+  if (loading) {
+    return <div style={{ padding: '20px', textAlign: 'center' }}>Loading tasks... ⏳</div>;
+  }
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h1>My To-Do List 📝</h1>
       <p style={{ color: '#666', fontSize: '14px' }}>
-        ✅ Tasks are saved automatically to your browser's database!
+        ☁️ Tasks are saved to the cloud database (MongoDB)!
       </p>
       
-      {/* 🔥 NEW: Progress indicator */}
+      {/* Progress indicator */}
       {totalCount > 0 && (
         <div style={{ 
           marginBottom: '20px', 
@@ -113,9 +152,9 @@ function TodoList() {
 
       {/* Display list of tasks */}
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {tasks.map((task, index) => (
+        {tasks.map((task) => (
           <li 
-            key={index}
+            key={task._id}
             style={{ 
               padding: '12px', 
               marginBottom: '10px', 
@@ -127,11 +166,11 @@ function TodoList() {
               transition: 'all 0.3s ease'
             }}
           >
-            {/* 🔥 NEW: Checkbox to mark complete */}
+            {/* Checkbox to mark complete */}
             <input
               type="checkbox"
               checked={task.completed}
-              onChange={() => toggleComplete(index)}
+              onChange={() => toggleComplete(task._id, task.completed)}
               style={{ 
                 marginRight: '12px', 
                 width: '20px', 
@@ -152,7 +191,7 @@ function TodoList() {
 
             {/* Delete button */}
             <button 
-              onClick={() => deleteTask(index)}
+              onClick={() => deleteTask(task._id)}
               style={{ 
                 padding: '5px 10px', 
                 backgroundColor: '#ff4444', 
