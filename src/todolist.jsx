@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
+// API Base URL - points to our EC2 backend
+const API_URL = 'http://13.58.112.70:3001';
+
 function TodoList() {
   const [tasks, setTasks] = useState([]);
   const [inputValue, setInputValue] = useState('');
-  const [loading, setLoading] = useState(true); // NEW: loading state
+  const [loading, setLoading] = useState(true);
 
   // Load tasks from backend when component mounts
   useEffect(() => {
     fetchTasks();
   }, []);
 
-  // NEW: Function to fetch tasks from backend
+  // Function to fetch tasks from backend
   const fetchTasks = async () => {
     try {
-      const response = await fetch('/api/tasks');
+      const response = await fetch(`${API_URL}/api/tasks`);
       const data = await response.json();
       setTasks(data);
       console.log('✅ Loaded tasks from cloud database:', data);
@@ -28,7 +31,7 @@ function TodoList() {
   const addTask = async () => {
     if (inputValue.trim() !== '') {
       try {
-        const response = await fetch('/api/tasks', {
+        const response = await fetch(`${API_URL}/api/tasks`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -48,7 +51,7 @@ function TodoList() {
   // Function to toggle task completion
   const toggleComplete = async (taskId, currentStatus) => {
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +72,7 @@ function TodoList() {
   // Function to delete a task
   const deleteTask = async (taskId) => {
     try {
-      await fetch(`/api/tasks/${taskId}`, {
+      await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'DELETE',
       });
       setTasks(tasks.filter(task => task._id !== taskId));
@@ -82,7 +85,7 @@ function TodoList() {
   // Function to clear all tasks
   const clearAllTasks = async () => {
     try {
-      await fetch('/api/tasks', {
+      await fetch(`${API_URL}/api/tasks`, {
         method: 'DELETE',
       });
       setTasks([]);
