@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // 🔥 NEW: Connect to MongoDB
-mongoose.connect(MONGODB_URI)
+mongoose.connect(mongoURI)
   .then(() => console.log('✅ Connected to MongoDB!'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
@@ -92,6 +92,6 @@ app.delete('/api/tasks', async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`✅ Server running on http://localhost:${port}`);
 });
