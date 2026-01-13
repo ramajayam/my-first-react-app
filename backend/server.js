@@ -1,13 +1,13 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const Task = require('./taskModel');
 
 const app = express();
-const PORT = 3001;
-
-// 🔥 NEW: MongoDB connection string
-const MONGODB_URI = 'mongodb+srv://ramajayamarumugam_db_user:c0WNCvMsPIsXXbf6@cluster0.rmfzwsx.mongodb.net/?appName=Cluster0';
+const mongoURI = process.env.MONGODB_URI;
+const port = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
