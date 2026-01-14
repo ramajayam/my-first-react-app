@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 // API Base URL - points to our EC2 backend
-const API_URL = 'http://13.58.112.70:3001';
+//const API_URL = 'http://13.58.112.70:3001';
+
+// At the top of your component file (e.g., TodoList.jsx)
+const API_URL = import.meta.env.DEV ? 'http://localhost:3001' : 'http://13.58.112.70:3001';
 
 function TodoList() {
   const [tasks, setTasks] = useState([]);
